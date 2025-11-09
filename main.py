@@ -1,11 +1,13 @@
 import os
 import requests
 import json
-import anthropic
+#import anthropic
+from google import genai
 from dotenv import load_dotenv
 
 # loading keys
-load_dotenv()
+load_dotenv(dotenv_path="d:/githubdemo/nl-movie/apikeys.env")
+#load_dotenv()
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 LLM_API_KEY = os.getenv("LLM_API_KEY")
 
@@ -14,7 +16,9 @@ if not TMDB_API_KEY or not LLM_API_KEY:
     raise EnvironmentError("Set API keys in .env file: TMDB_API_KEY and LLM_API_KEY")
 
 # setting up the LLM
-client = anthropic.Anthropic(api_key=LLM_API_KEY)
+#client = anthropic.Anthropic(api_key=LLM_API_KEY)
+#genai.configure(api_key=LLM_API_KEY)
+llm_client = genai.Client(api_key=LLM_API_KEY)
 
 # TMDB-API URL
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
@@ -140,13 +144,22 @@ def handle_get_actor_credits(actor_name):
 def get_intent_from_llm(user_text):
 
     try:
-        response = client.messages.create(
-            max_tokens=2048,
-            system=SYSTEM_PROMPT,
-            messages= [
-                {"role": "user", "content": user_text},
-            ],
-            model="claude-3-5-haiku-latest"
+        #response = client.messages.create(
+        #    max_tokens=2048,
+        #    system=SYSTEM_PROMPT,
+        #    messages= [
+        #        {"role": "user", "content": user_text},
+        #    ],
+        #    model="claude-3-5-haiku-latest"
+        #)
+        response = llm_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[user_text],
+            config={
+                "system_instruction": SYSTEM_PROMPT,
+                "temperature": 0.0,
+                "response_mime_type": "application/json"
+            }
         )
 
         json_str = response.text.strip().replace("```json", "").replace("```", "").strip()
